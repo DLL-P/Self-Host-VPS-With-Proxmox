@@ -1,0 +1,32 @@
+#cloud-config
+hostname: __VPS_NAME__
+manage_etc_hosts: true
+
+users:
+  - name: __VPS_USER__
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: sudo
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - __SSH_PUBLIC_KEY__
+    lock_passwd: true
+
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: true
+packages:
+  - qemu-guest-agent
+  - fail2ban
+  - ufw
+
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw --force enable
+  - systemctl enable --now fail2ban
+
+final_message: "VPS __VPS_NAME__ pronta após $UPTIME segundos"

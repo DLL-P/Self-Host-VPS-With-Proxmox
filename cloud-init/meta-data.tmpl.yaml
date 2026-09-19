@@ -1,0 +1,2 @@
+instance-id: __VPS_NAME__
+local-hostname: __VPS_NAME__
