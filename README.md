@@ -42,6 +42,23 @@ configurado, destinada a hospedar um serviço exposto à internet.
 - [`docs/04-portas-e-servicos.md`](docs/04-portas-e-servicos.md) — configuração de portas e instalação do serviço via Docker.
 - [`docs/05-passo-a-passo-completo.md`](docs/05-passo-a-passo-completo.md) — guia detalhado do provisionamento à concessão de acesso.
 
+## Reutilização como modelo
+
+Todo o comportamento variável fica isolado em `config/vm.env` (arquivo
+local, não versionado) e no arquivo de rede/portas descrito nos docs. Para
+replicar este provisionamento em outro caso:
+
+1. Clone ou faça um fork do repositório.
+2. Copie `config/vm.env.example` para `config/vm.env` e preencha com os
+   valores do novo ambiente (rede, recursos, portas, chave SSH).
+3. Nada em `scripts/`, `cloud-init/` ou `docs/` precisa ser alterado para
+   um novo caso de uso — esses arquivos são genéricos por design.
+4. Caso o repositório deva funcionar como ponto de partida para múltiplas
+   pessoas/times, habilite "Template repository" nas configurações do
+   GitHub (Settings → General → Template repository). Isso adiciona o
+   botão "Use this template", que cria uma cópia independente do
+   repositório sem herdar histórico de commits.
+
 ## Estrutura
 
 ```
