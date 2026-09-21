@@ -1,0 +1,46 @@
+#cloud-config
+# Hardening inicial aplicado dentro da VM na primeira inicialização.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ufw
+  - fail2ban
+  - qemu-guest-agent
+  - unattended-upgrades
+  - curl
+  - vim
+
+users:
+  - default
+  - name: cliente
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+
+# Desabilita login root por senha e login por senha em geral: só chave SSH.
+ssh_pwauth: false
+disable_root: true
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      X11Forwarding no
+      MaxAuthTries 3
+
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - systemctl restart sshd
+  # UFW: nega tudo por padrão, libera SSH e deixa as portas de jogo para o admin liberar via config/vm.env + script 03.
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow OpenSSH
+  # __GAME_PORTS_UFW_RULES__ (linhas "- ufw allow PORTA/PROTO" são inseridas aqui pelo script 01-create-vm.sh)
+  - ufw --force enable
+  - systemctl enable --now fail2ban
+  - echo "Provisionamento inicial concluído em $(date)" > /etc/vps-host-provisioned

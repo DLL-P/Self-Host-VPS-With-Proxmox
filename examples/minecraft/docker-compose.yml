@@ -1,0 +1,19 @@
+# Exemplo pronto de servidor de jogos (Minecraft Java) rodando dentro da VPS via Docker.
+# Copie esta pasta para a VM (scp) e rode: docker compose up -d
+# Ajuste EULA, VERSION, MEMORY e demais variáveis conforme necessário:
+# https://github.com/itzg/docker-minecraft-server
+services:
+  minecraft:
+    image: itzg/minecraft-server:latest
+    container_name: minecraft
+    restart: unless-stopped
+    ports:
+      - "25565:25565/tcp"
+    environment:
+      EULA: "TRUE"
+      TYPE: "VANILLA"
+      VERSION: "LATEST"
+      MEMORY: "4G"
+      DIFFICULTY: "normal"
+    volumes:
+      - ./data:/data
