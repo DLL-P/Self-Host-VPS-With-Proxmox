@@ -1,0 +1,14 @@
+# Modelo genérico para execução de um serviço via Docker dentro da VM.
+# Substituir a imagem, as portas e as variáveis de ambiente pelas do
+# serviço escolhido.
+services:
+  app:
+    image: <IMAGEM_DO_SERVICO>
+    container_name: app
+    restart: unless-stopped
+    ports:
+      - "<PORTA_EXTERNA>:<PORTA_INTERNA>/<PROTOCOLO>"
+    environment:
+      EXEMPLO_VAR: "valor"
+    volumes:
+      - ./data:/data

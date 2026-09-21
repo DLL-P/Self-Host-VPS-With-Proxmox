@@ -1,0 +1,4 @@
+config/vm.env
+cloud-init/user-data.generated.yaml
+*.qcow2
+*.log
