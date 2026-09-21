@@ -24,6 +24,7 @@ hardening básico já configurados.
 - [`docs/02-rede-ip-externo.md`](docs/02-rede-ip-externo.md) — IP público direto (bridged) vs NAT/port-forward.
 - [`docs/03-firewall-seguranca.md`](docs/03-firewall-seguranca.md) — firewall do Proxmox, UFW, fail2ban, hardening de SSH.
 - [`docs/04-servidor-de-jogos.md`](docs/04-servidor-de-jogos.md) — portas por jogo e exemplo com Docker.
+- [`docs/05-passo-a-passo-completo.md`](docs/05-passo-a-passo-completo.md) — guia único do zero até entregar o acesso ao cliente.
 
 ## Estrutura
 
