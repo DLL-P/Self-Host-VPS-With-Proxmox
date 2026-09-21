@@ -7,7 +7,8 @@ ENV_FILE="${VPS_ENV_FILE:-$ROOT_DIR/config/vm.env}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Arquivo de configuração não encontrado: $ENV_FILE" >&2
-  echo "Copie config/vm.env.example para config/vm.env e ajuste os valores." >&2
+  echo "Rode ./setup.sh para gerá-lo com um assistente interativo," >&2
+  echo "ou copie config/vm.env.example para config/vm.env manualmente." >&2
   exit 1
 fi
 
