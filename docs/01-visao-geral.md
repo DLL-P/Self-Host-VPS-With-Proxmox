@@ -12,26 +12,33 @@ internet.
   o Proxmox" abaixo.
 - Ao menos um IP público disponível: dedicado à VM, ou o IP do próprio
   host, caso o modo de rede seja NAT (ver `docs/02-rede-ip-externo.md`).
-- Uma chave SSH pública para acesso à VM.
 - Acesso root ao host Proxmox para executar os scripts.
+- Uma chave SSH pública para acesso à VM. Não é obrigatório ter uma
+  previamente — `setup.sh` gera uma automaticamente se não encontrar
+  nenhuma.
 
 ## Passo a passo resumido
 
-1. Copiar `config/vm.env.example` para `config/vm.env` e preencher os
-   valores (VMID, IP, bridge, portas do serviço, etc). Os comentários no
-   próprio arquivo descrevem cada variável.
-2. Copiar o repositório para o host Proxmox (`git clone` ou `scp -r`).
-3. No host Proxmox:
+1. Copiar o repositório para o host Proxmox (`git clone` ou `scp -r`).
+2. No host Proxmox:
    ```bash
    cd vps-host/scripts
    chmod +x *.sh
-   ./provision.sh
+   ./setup.sh
    ```
-   O script cria a VM (`01-create-vm.sh`), configura NAT/port-forward
-   quando necessário (`02-network-nat.sh`) e configura o firewall
+   O assistente detecta storages e bridges já existentes no host, sugere
+   um valor padrão para cada pergunta e gera `config/vm.env` sozinho. Ao
+   final, oferece para já executar o provisionamento (`provision.sh`),
+   que cria a VM (`01-create-vm.sh`), configura NAT/port-forward quando
+   necessário (`02-network-nat.sh`) e configura o firewall
    (`03-firewall.sh`).
-4. Acessar a VM via SSH, com o usuário definido em `CI_USER`.
-5. Instalar o serviço desejado — ver `docs/04-portas-e-servicos.md`.
+
+   Alternativa manual, para quem preferir editar a configuração à mão:
+   copiar `config/vm.env.example` para `config/vm.env`, preencher os
+   valores (os comentários no arquivo descrevem cada variável) e rodar
+   `./provision.sh` diretamente.
+3. Acessar a VM via SSH, com o usuário definido em `CI_USER`.
+4. Instalar o serviço desejado — ver `docs/04-portas-e-servicos.md`.
 
 ## Instalando o Proxmox
 

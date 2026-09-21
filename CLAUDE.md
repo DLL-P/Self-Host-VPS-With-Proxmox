@@ -19,11 +19,16 @@ destinada a hospedar um serviço exposto à internet.
   regras de UFW correspondentes a `SERVICE_PORTS` (ver
   `scripts/01-create-vm.sh`); o resultado renderizado
   (`user-data.generated.yaml`) também não é versionado.
-- `scripts/` — executados no host Proxmox, nesta ordem via
-  `provision.sh`: `01-create-vm.sh` (cria a VM), `02-network-nat.sh`
-  (bridge interna + DNAT, só em `NETWORK_MODE=nat`), `03-firewall.sh`
-  (regras no firewall do Proxmox via `pvesh`). `lib.sh` carrega
-  `config/vm.env` e define helpers (`log`, `require_root`, `require_cmd`).
+- `scripts/` — executados no host Proxmox. `setup.sh` é o ponto de
+  entrada recomendado: assistente interativo que detecta storages/bridges
+  do próprio host, faz perguntas com valores padrão e gera
+  `config/vm.env` sem exigir conhecimento prévio de Proxmox. Ele delega
+  para `provision.sh`, que roda nesta ordem: `01-create-vm.sh` (cria a
+  VM), `02-network-nat.sh` (bridge interna + DNAT, só em
+  `NETWORK_MODE=nat`), `03-firewall.sh` (regras no firewall do Proxmox
+  via `pvesh`). `lib.sh` carrega `config/vm.env` e define helpers (`log`,
+  `require_root`, `require_cmd`) — usado por `01`, `02` e `03`, não por
+  `setup.sh` (que ainda não tem `config/vm.env` para carregar).
 - `examples/` — modelo genérico de `docker-compose.yml` e um instalador de
   Docker, para uso dentro da VM após o provisionamento. Não referenciar
   serviços ou jogos específicos aqui — o modelo deve permanecer genérico.
@@ -45,3 +50,8 @@ destinada a hospedar um serviço exposto à internet.
 - Sem comentários explicando o óbvio; comentário só quando há uma decisão
   não evidente (ex.: por que um placeholder existe, por que uma ordem de
   execução importa).
+- O requisito de design de `setup.sh` é não exigir de quem executa nenhum
+  conhecimento prévio de Proxmox (nomes de storage, bridges, sintaxe de
+  `qm`/`pvesh`) — qualquer novo prompt adicionado a ele deve manter essa
+  premissa (detectar automaticamente quando possível, sugerir um padrão
+  sensato, validar a entrada antes de aceitar).

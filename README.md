@@ -25,14 +25,26 @@ configurado, destinada a hospedar um serviço exposto à internet.
 
 ## Uso
 
-1. Copie `config/vm.env.example` para `config/vm.env` e ajuste os valores.
-2. No host Proxmox:
-   ```bash
-   cd scripts
-   chmod +x *.sh
-   ./provision.sh
-   ```
-3. Instale o serviço desejado dentro da VM — ver `docs/04-portas-e-servicos.md`.
+Não é necessário conhecimento prévio de Proxmox além de ter acesso root ao
+host. No host Proxmox:
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd vps-host/scripts
+chmod +x *.sh
+./setup.sh
+```
+
+`setup.sh` detecta os storages e bridges já existentes no host, sugere um
+valor padrão para cada pergunta e gera `config/vm.env` sozinho — inclusive
+gerando uma chave SSH automaticamente, se nenhuma for encontrada. Ao
+final, ele já oferece para executar o provisionamento.
+
+Para quem preferir configurar manualmente: copie `config/vm.env.example`
+para `config/vm.env`, edite os valores e rode `./provision.sh` diretamente.
+
+Depois de criada a VM, instale o serviço desejado dentro dela — ver
+`docs/04-portas-e-servicos.md`.
 
 ## Documentação
 
