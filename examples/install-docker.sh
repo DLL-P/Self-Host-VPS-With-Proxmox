@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Instala Docker + Docker Compose plugin dentro da VPS (Debian/Ubuntu).
-# Rode dentro da VM, não no host Proxmox.
+# Executar dentro da VM, não no host Proxmox.
 set -euo pipefail
 
 sudo apt-get update
@@ -18,4 +18,4 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo usermod -aG docker "$USER"
 
-echo "Docker instalado. Faça logout/login (ou 'newgrp docker') para usar o comando 'docker' sem sudo."
+echo "Docker instalado. É necessário logout/login (ou 'newgrp docker') para usar o comando 'docker' sem sudo."

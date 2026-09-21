@@ -1,56 +1,44 @@
-# Passo a passo completo: criar a VPS e entregar ao cliente
+# Passo a passo completo
 
-Guia do zero até entregar o acesso ao cliente, usando os scripts deste
-repositório. Rode os comandos marcados **[HOST]** dentro do shell do
-Proxmox, e os marcados **[VM]** dentro da VPS já criada.
+Guia do provisionamento até a concessão de acesso a terceiros, usando os
+scripts deste repositório. Comandos marcados **[HOST]** rodam no shell do
+Proxmox; comandos marcados **[VM]** rodam dentro da VPS já criada.
 
 ## 1. Acessar o Proxmox
 
-- Painel web: `https://IP-DO-SEU-PROXMOX:8006` (usuário `root`, ou o que
-  você configurou).
-- Shell: no painel web, clique no node (nome do servidor) na coluna
-  esquerda -> botão **Shell**. Ou via SSH direto: `ssh root@IP-DO-PROXMOX`.
-
-Todos os comandos abaixo marcados **[HOST]** rodam nesse shell.
+- Painel web: `https://IP-DO-PROXMOX:8006`.
+- Shell: no painel, selecionar o node e clicar em **Shell**, ou conectar
+  via SSH: `ssh root@IP-DO-PROXMOX`.
 
 ## 2. Trazer o repositório para o host **[HOST]**
 
 ```bash
-apt update && apt install -y git   # se o git não estiver instalado
-git clone https://github.com/DLL-P/vps-host.git
+apt update && apt install -y git
+git clone <URL_DO_REPOSITORIO>
 cd vps-host
 ```
 
-Se o repositório for privado, use um token de acesso pessoal no lugar da
-senha, ou `git clone` via SSH com uma chave configurada no GitHub.
-
-## 3. Descobrir os valores do seu ambiente **[HOST]**
-
-Antes de editar a configuração, colete estes dados do seu Proxmox:
+## 3. Levantar os valores do ambiente **[HOST]**
 
 ```bash
-pvesm status          # nomes dos storages disponíveis (ex: local-lvm, local)
-ip -br a              # interfaces e bridges de rede (ex: vmbr0)
-cat /etc/network/interfaces   # confirma qual bridge tem a interface WAN
+pvesm status          # storages disponíveis
+ip -br a              # interfaces e bridges de rede
+cat /etc/network/interfaces
 ```
 
-Anote:
-- Nome do storage de disco (`VM_STORAGE`, normalmente `local-lvm`).
-- Nome do storage para ISOs/imagens (`ISO_STORAGE`, normalmente `local`).
-- Nome da bridge com saída para internet (`BRIDGE`, normalmente `vmbr0`).
-- Se você tem **um IP público só** (do próprio host) ou **um IP público
-  extra disponível** para dar à VM — isso decide `NETWORK_MODE`
-  (veja `docs/02-rede-ip-externo.md`).
+Registrar: nome do storage de disco (`VM_STORAGE`), storage de imagens
+(`ISO_STORAGE`), bridge com saída para internet (`BRIDGE`), e se há um IP
+público dedicado para a VM ou apenas o IP do host — isso define
+`NETWORK_MODE` (ver `docs/02-rede-ip-externo.md`).
 
-## 4. Gerar uma chave SSH (se ainda não tiver) **[HOST ou sua máquina]**
+## 4. Gerar uma chave SSH **[HOST ou máquina local]**
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/vps_cliente -C "vps-cliente"
+ssh-keygen -t ed25519 -f ~/.ssh/vps_key -C "vps"
 ```
 
-Isso cria `~/.ssh/vps_cliente` (privada) e `~/.ssh/vps_cliente.pub`
-(pública). A **pública** vai para dentro da VM (via cloud-init); a
-**privada** fica com quem vai acessar a VM por SSH (você e/ou o cliente).
+A chave pública (`.pub`) é usada dentro da VM via cloud-init; a chave
+privada permanece com quem for acessar a VM por SSH.
 
 ## 5. Configurar `config/vm.env` **[HOST]**
 
@@ -59,24 +47,20 @@ cp config/vm.env.example config/vm.env
 nano config/vm.env
 ```
 
-Preencha com base no que você levantou no passo 3:
-
-| Variável | O que colocar |
+| Variável | Valor |
 |---|---|
-| `VMID` | Um ID livre (ex: `9000`) — confira com `qm list` que não está em uso |
-| `VM_STORAGE` / `ISO_STORAGE` | Valores do `pvesm status` |
-| `BRIDGE` | Bridge com saída internet (ex: `vmbr0`) |
-| `VM_CORES` / `VM_MEMORY_MB` / `VM_DISK_GB` | Recursos para o jogo (Minecraft leve: 2 vCPU/4GB já roda; ajuste conforme o jogo) |
-| `NETWORK_MODE` | `bridged` se a VM vai ter IP público próprio, `nat` se só o host tem IP público |
-| `VM_IP` / `VM_GATEWAY` / `VM_CIDR` | IP público da VM (bridged) ou IP interno tipo `10.10.10.10` (nat) |
-| `HOST_PUBLIC_IP` | Só em modo `nat`: o IP público do próprio host |
-| `SSH_PUBLIC_KEY_FILE` | Caminho da chave pública gerada no passo 4 (ex: `~/.ssh/vps_cliente.pub`) |
-| `ADMIN_SSH_SOURCE_IP` | Seu IP fixo, se tiver (ex: `189.x.x.x/32`). Se não tiver IP fixo, deixe `0.0.0.0/0` por enquanto e restrinja depois |
-| `GAME_PORTS` | Portas do jogo (ex: `25565/tcp` para Minecraft Java) — veja tabela em `docs/04-servidor-de-jogos.md` |
+| `VMID` | Um ID livre — confirmar com `qm list` |
+| `VM_STORAGE` / `ISO_STORAGE` | Valores obtidos com `pvesm status` |
+| `BRIDGE` | Bridge com saída para internet |
+| `VM_CORES` / `VM_MEMORY_MB` / `VM_DISK_GB` | Recursos alocados à VM |
+| `NETWORK_MODE` | `bridged` (IP público direto) ou `nat` (IP único no host) |
+| `VM_IP` / `VM_GATEWAY` / `VM_CIDR` | Endereço da VM |
+| `HOST_PUBLIC_IP` | Apenas em modo `nat`: IP público do host |
+| `SSH_PUBLIC_KEY_FILE` | Caminho da chave pública gerada no passo 4 |
+| `ADMIN_SSH_SOURCE_IP` | Origem autorizada para SSH administrativo |
+| `SERVICE_PORTS` | Portas do serviço a ser hospedado |
 
-Salve (`Ctrl+O`, `Enter`, `Ctrl+X` no nano).
-
-## 6. Rodar o provisionamento **[HOST]**
+## 6. Executar o provisionamento **[HOST]**
 
 ```bash
 cd scripts
@@ -84,126 +68,72 @@ chmod +x *.sh
 ./provision.sh
 ```
 
-Isso vai, na ordem:
-1. Baixar a imagem cloud do Debian 12 (só na primeira vez).
-2. Criar a VM com o VMID configurado, cloud-init com usuário `cliente`,
-   SSH só por chave, UFW e fail2ban já habilitados.
-3. Se `NETWORK_MODE=nat`, criar a bridge interna e as regras de
-   NAT/port-forward.
-4. Configurar o firewall do Proxmox (bloqueia tudo, libera SSH restrito e
-   as portas do jogo).
-5. Ligar a VM.
+O script cria a VM, configura NAT/port-forward quando aplicável, e
+configura o firewall do Proxmox. Em caso de falha, corrigir a variável
+correspondente em `config/vm.env` e executar novamente — o script recusa
+recriar um VMID já existente; para refazer do zero, remover a VM com
+`qm stop <VMID> && qm destroy <VMID>`.
 
-Acompanhe a saída — se algo falhar (ex: storage errado), corrija a
-variável em `config/vm.env` e rode `./provision.sh` de novo (o script
-recusa recriar um VMID já existente; se precisar refazer do zero, apague a
-VM antes com `qm stop <VMID> && qm destroy <VMID>`).
-
-## 7. Verificar se a VM subiu **[HOST]**
+## 7. Verificar a VM **[HOST]**
 
 ```bash
 qm status <VMID>
-qm agent <VMID> ping        # confirma que o guest agent está respondendo
+qm agent <VMID> ping
 ```
 
-No painel web, o node -> VMID deve aparecer "running" com um gráfico de
-rede/CPU ativo.
-
-## 8. Testar o acesso SSH **[sua máquina]**
+## 8. Testar o acesso SSH **[máquina local]**
 
 ```bash
-ssh -i ~/.ssh/vps_cliente cliente@<IP_DA_VM_OU_HOST_PUBLICO>
+ssh -i ~/.ssh/vps_key <usuario>@<IP_DA_VM_OU_HOST>
 ```
 
-Se conectar sem pedir senha, o hardening básico está funcionando (login
-root e por senha estão desabilitados).
+Login sem solicitação de senha confirma que a autenticação restrita a
+chave está ativa.
 
-## 9. Instalar o servidor de jogos **[VM]**
+## 9. Instalar o serviço **[VM]**
 
-Exemplo com Minecraft (veja `docs/04-servidor-de-jogos.md` para outros
-jogos):
+Ver `docs/04-portas-e-servicos.md`.
+
+## 10. Testar o acesso externo
+
+Verificar se a porta responde a partir de fora da rede do provedor
+(ferramenta de teste de porta, ou uma conexão originada de outra rede). Se
+não houver resposta:
+
+- Modo `bridged`: confirmar se o IP chegou à interface da VM (`ip a`) e se
+  o provedor não faz filtragem por endereço MAC.
+- Modo `nat`: confirmar as regras com `iptables -t nat -L -n -v` no host,
+  e se `HOST_PUBLIC_IP` é o endereço correto.
+- Revisar o firewall do Proxmox (Datacenter → node → VMID → Firewall) e o
+  UFW dentro da VM (`sudo ufw status`).
+
+## 11. Concessão de acesso a terceiros
+
+Para uso apenas do serviço hospedado, basta informar o endereço (IP
+público, ou `HOST_PUBLIC_IP` em modo NAT) e a porta, quando aplicável.
+
+Para acesso administrativo à VM, não compartilhar a própria chave
+privada. Solicitar que a outra parte gere sua própria chave e envie apenas
+a pública:
 
 ```bash
-# na sua máquina, copie o exemplo para dentro da VM:
-scp -i ~/.ssh/vps_cliente -r examples/minecraft cliente@<IP_DA_VM>:~/minecraft
-
-# entre na VM:
-ssh -i ~/.ssh/vps_cliente cliente@<IP_DA_VM>
-cd ~/minecraft
-chmod +x install-docker.sh && ./install-docker.sh
-# faça logout/login (ou rode: newgrp docker) para usar docker sem sudo
-docker compose up -d
-docker compose logs -f   # Ctrl+C para sair do log quando o server terminar de subir
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
 ```
 
-## 10. Testar o acesso externo **[sua máquina, fora da rede do provedor]**
-
-- Teste a porta de fora com um site tipo `https://www.yougetsignal.com/tools/open-ports/`
-  ou peça pra alguém de outra rede tentar conectar.
-- Abra o próprio jogo (cliente Minecraft, etc) e tente conectar usando o
-  IP público (e a porta, se for diferente da padrão).
-
-Se não conectar:
-- Modo `bridged`: confira se o IP realmente chegou na interface da VM
-  (`ip a` dentro da VM) e se o provedor não filtra por MAC (veja
-  `docs/02-rede-ip-externo.md`).
-- Modo `nat`: confira as regras com `iptables -t nat -L -n -v` no host e
-  se `HOST_PUBLIC_IP` é realmente o IP que o cliente vai usar.
-- Confira o firewall do Proxmox no painel: Datacenter -> node -> VMID ->
-  Firewall, e o UFW dentro da VM (`sudo ufw status`).
-
-## 11. Compartilhar o acesso com o cliente
-
-### O que o cliente precisa para jogar (a maioria dos casos)
-Basta passar:
-- **Endereço do servidor**: o IP público (modo `bridged`) ou o
-  `HOST_PUBLIC_IP` (modo `nat`).
-- **Porta**, se o jogo pedir (ex: Minecraft geralmente só pede o IP, a
-  porta 25565 é padrão; outros jogos podem exigir informar a porta).
-
-Exemplo de mensagem para o cliente:
-> Servidor de Minecraft: `SEU_IP_PUBLICO` (porta padrão 25565, não precisa
-> informar). Já pode conectar!
-
-### Se o cliente também quiser administrar a VM (opcional)
-
-Não compartilhe sua própria chave privada. Em vez disso, gere uma chave
-específica para ele:
+No host, adicionar a chave pública recebida à VM:
 
 ```bash
-# o cliente gera a própria chave na máquina dele:
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C "cliente"
-# ele te manda o CONTEÚDO do arquivo .pub (não o privado) por um canal
-# confiável (mensagem, email)
+ssh -i ~/.ssh/vps_key <usuario>@<IP_DA_VM> \
+  "echo 'CONTEUDO_DA_CHAVE_PUBLICA' >> ~/.ssh/authorized_keys"
 ```
 
-No host Proxmox, adicione a chave pública dele na VM:
+Chaves privadas, senhas e tokens não devem ser enviados por canais sem
+criptografia.
 
-```bash
-ssh -i ~/.ssh/vps_cliente cliente@<IP_DA_VM> \
-  "echo 'CONTEUDO_DA_CHAVE_PUBLICA_DO_CLIENTE' >> ~/.ssh/authorized_keys"
-```
+## 12. Checklist final
 
-Agora ele acessa com a própria chave: `ssh cliente@<IP_DA_VM>`.
-
-**Nunca envie chaves privadas, senhas ou tokens por canais não seguros**
-(grupos de WhatsApp públicos, e-mail sem criptografia). Prefira mensagem
-direta e, se possível, um gerenciador de senhas com compartilhamento
-seguro.
-
-### Se quiser dar autonomia sem acesso SSH direto
-
-Para o cliente reiniciar/atualizar o próprio servidor de jogo sem acesso
-root, considere no futuro um painel como
-[Pterodactyl](https://pterodactyl.io/) rodando na VM — isso está fora do
-escopo deste provisionamento inicial, mas pode ser adicionado depois sem
-recriar a VM.
-
-## 12. Checklist final antes de entregar
-
-- [ ] SSH root e por senha desabilitados (confirmado no passo 8).
-- [ ] `ADMIN_SSH_SOURCE_IP` restrito ao seu IP (ajuste e rode
-      `scripts/03-firewall.sh` de novo se ainda estiver `0.0.0.0/0`).
-- [ ] Porta do jogo testada de fora da rede do provedor (passo 10).
-- [ ] Backup da VM configurado no Proxmox (Datacenter -> Backup).
-- [ ] Cliente recebeu IP/porta (e chave SSH, se aplicável) por canal seguro.
+- [ ] SSH root e por senha desabilitados.
+- [ ] `ADMIN_SSH_SOURCE_IP` restrito a uma origem conhecida.
+- [ ] Porta do serviço testada externamente.
+- [ ] Backup da VM configurado no Proxmox (Datacenter → Backup).
+- [ ] Acesso entregue por canal seguro.

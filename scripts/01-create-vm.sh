@@ -61,15 +61,15 @@ else
   qm set "$VMID" --ipconfig0 "ip=${VM_IP}/${VM_CIDR},gw=${NAT_HOST_GATEWAY_IP}"
 fi
 
-log "Renderizando cloud-init customizado (usuário/hardening + portas do jogo)..."
+log "Renderizando cloud-init customizado (usuário/hardening + portas do serviço)..."
 UFW_RULES=""
-for entry in $GAME_PORTS; do
+for entry in $SERVICE_PORTS; do
   UFW_RULES="${UFW_RULES}  - ufw allow ${entry}"$'\n'
 done
 
 RENDERED="$ROOT_DIR/cloud-init/user-data.generated.yaml"
 awk -v rules="$UFW_RULES" '{
-  if ($0 ~ /__GAME_PORTS_UFW_RULES__/) { printf "%s", rules } else { print }
+  if ($0 ~ /__SERVICE_PORTS_UFW_RULES__/) { printf "%s", rules } else { print }
 }' "$ROOT_DIR/cloud-init/user-data.yaml.tmpl" > "$RENDERED"
 
 qm set "$VMID" --cicustom "user=local:snippets/${VM_NAME}-user-data.yaml"

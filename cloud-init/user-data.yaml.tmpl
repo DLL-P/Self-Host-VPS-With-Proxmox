@@ -14,7 +14,7 @@ packages:
 
 users:
   - default
-  - name: cliente
+  - name: vpsuser
     groups: [sudo]
     shell: /bin/bash
     sudo: "ALL=(ALL) NOPASSWD:ALL"
@@ -36,11 +36,11 @@ write_files:
 runcmd:
   - systemctl enable --now qemu-guest-agent
   - systemctl restart sshd
-  # UFW: nega tudo por padrão, libera SSH e deixa as portas de jogo para o admin liberar via config/vm.env + script 03.
+  # UFW: nega tudo por padrão, libera SSH e deixa as portas do serviço para o admin liberar via config/vm.env + script 03.
   - ufw default deny incoming
   - ufw default allow outgoing
   - ufw allow OpenSSH
-  # __GAME_PORTS_UFW_RULES__ (linhas "- ufw allow PORTA/PROTO" são inseridas aqui pelo script 01-create-vm.sh)
+  # __SERVICE_PORTS_UFW_RULES__ (linhas "- ufw allow PORTA/PROTO" são inseridas aqui pelo script 01-create-vm.sh)
   - ufw --force enable
   - systemctl enable --now fail2ban
   - echo "Provisionamento inicial concluído em $(date)" > /etc/vps-host-provisioned

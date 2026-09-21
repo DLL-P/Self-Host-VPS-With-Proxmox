@@ -52,8 +52,8 @@ if ! iptables -t nat -C POSTROUTING -s "$NAT_SUBNET" -o "$WAN_IFACE" -j MASQUERA
   iptables -t nat -A POSTROUTING -s "$NAT_SUBNET" -o "$WAN_IFACE" -j MASQUERADE
 fi
 
-log "Configurando DNAT (port-forward) das portas do jogo para $VM_IP..."
-for entry in $GAME_PORTS; do
+log "Configurando DNAT (port-forward) das portas do serviço para $VM_IP..."
+for entry in $SERVICE_PORTS; do
   port="${entry%%/*}"
   proto="${entry##*/}"
   if ! iptables -t nat -C PREROUTING -i "$WAN_IFACE" -p "$proto" --dport "$port" -j DNAT --to-destination "${VM_IP}:${port}" 2>/dev/null; then

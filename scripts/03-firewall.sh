@@ -2,7 +2,7 @@
 # Configura o firewall do Proxmox (pve-firewall) no nível do Datacenter e da VM:
 # - Bloqueia tudo por padrão
 # - Libera SSH apenas da origem administrativa
-# - Libera as portas do servidor de jogos para qualquer IP externo
+# - Libera as portas do serviço hospedado para qualquer IP externo
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 source ./lib.sh
@@ -31,12 +31,12 @@ add_rule() {
 log "Liberando SSH (22/tcp) apenas para $ADMIN_SSH_SOURCE_IP..."
 add_rule tcp 22 "$ADMIN_SSH_SOURCE_IP" "vps-host: acesso SSH administrativo"
 
-log "Liberando portas do servidor de jogos para qualquer origem..."
-for entry in $GAME_PORTS; do
+log "Liberando as portas do serviço hospedado para qualquer origem..."
+for entry in $SERVICE_PORTS; do
   port="${entry%%/*}"
   proto="${entry##*/}"
-  add_rule "$proto" "$port" "" "vps-host: porta do servidor de jogos ($entry)"
+  add_rule "$proto" "$port" "" "vps-host: porta do serviço hospedado ($entry)"
 done
 
-log "Firewall configurado. Regra padrão de entrada = DROP; apenas SSH (restrito) e as portas do jogo estão liberadas."
+log "Firewall configurado. Regra padrão de entrada = DROP; apenas SSH (restrito) e as portas do serviço estão liberadas."
 log "Revise em: Datacenter -> $(hostname) -> ${VMID} -> Firewall no painel web do Proxmox."
